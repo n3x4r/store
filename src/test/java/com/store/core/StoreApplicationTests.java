@@ -4,17 +4,25 @@ import com.store.core.common.StoreUtil;
 import com.store.core.domain.Branch;
 import com.store.core.domain.Price;
 import com.store.core.domain.Product;
+import com.store.core.dto.PriceDTO;
 import com.store.core.service.BranchService;
 import com.store.core.service.PriceService;
 import com.store.core.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.net.URI;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ExtendWith( SpringExtension.class )
 @TestInstance( TestInstance.Lifecycle.PER_CLASS )
@@ -49,4 +57,25 @@ class StoreApplicationTests {
 		priceService.savePrice(new Price(null, b1, StoreUtil.getDate("2020-06-15-16.00.00"), StoreUtil.getDate("2020-12-31-23.59.59"), p1, 1, Double.parseDouble("38.95"), "EUR" ));
 	}
 
+	@ParameterizedTest
+	@CsvSource({
+			"2020-06-14-10.15.10,1,1,35.50",
+			"2020-06-14-16.15.10,1,1,25.45",
+			"2020-06-14-21.15.10,1,1,35.50",
+			"2020-06-15-10.15.10,1,1,30.50",
+			"2020-06-15-21.15.10,1,1,38.95"})
+	void testExpectPriceByDates(String appDate, Integer productId, Integer branchId, Double expectedPrice) {
+		URI targetUrl = UriComponentsBuilder
+				.fromUriString("/price")
+				.queryParam("appDate", appDate)
+				.queryParam("productId", productId)
+				.queryParam("branchId",branchId)
+				.build()
+				.toUri();
+
+		ResponseEntity<PriceDTO> response = template.getForEntity(targetUrl, PriceDTO.class );
+		PriceDTO prices = response.getBody();
+		assert prices != null;
+		assertEquals( expectedPrice, prices.getPrice() );
+	}
 }

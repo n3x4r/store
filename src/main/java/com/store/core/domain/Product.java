@@ -15,7 +15,7 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private Integer id; // this is the price List
+    private Integer id;
     private String name;
     private String description;
 }
